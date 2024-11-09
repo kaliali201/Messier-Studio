@@ -1,0 +1,9 @@
+import time
+import webbrowser
+print(".")
+time.sleep(0.7)
+print("..")
+time.sleep(0.7)
+print("...")
+print("\n Messier Translator açılıyor.")
+webbrowser.open(f"https://poe.com/MessierTranslator")
