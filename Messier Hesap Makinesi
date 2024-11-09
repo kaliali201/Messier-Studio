@@ -1,0 +1,14 @@
+def hesap_makinesi():
+    ilk_sayi = input("İlk sayıyı giriniz:")
+    ikinci_sayi = input("İkinci sayıyı giriniz:")
+    islem = input("İşlem giriniz:")
+    if islem == "toplama":
+        print(float(ilk_sayi) + float(ikinci_sayi))
+    if islem == "çıkarma":
+        print(float(ilk_sayi) - float(ikinci_sayi))
+    if islem == "çarpma":
+        print(float(ilk_sayi) * float(ikinci_sayi))
+    if islem == "bölme":
+        print(float(ilk_sayi) / float(ikinci_sayi))
+    hesap_makinesi()
+hesap_makinesi()
