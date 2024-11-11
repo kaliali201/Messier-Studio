@@ -1,14 +1,63 @@
-def hesap_makinesi():
-    ilk_sayi = input("İlk sayıyı giriniz:")
-    ikinci_sayi = input("İkinci sayıyı giriniz:")
-    islem = input("İşlem giriniz:")
-    if islem == "toplama":
-        print(float(ilk_sayi) + float(ikinci_sayi))
-    if islem == "çıkarma":
-        print(float(ilk_sayi) - float(ikinci_sayi))
-    if islem == "çarpma":
-        print(float(ilk_sayi) * float(ikinci_sayi))
-    if islem == "bölme":
-        print(float(ilk_sayi) / float(ikinci_sayi))
-    hesap_makinesi()
-hesap_makinesi()
+import tkinter as tk
+
+def ekle(deger):
+    ekran.insert(tk.END, deger)
+
+def hesapla():
+    try:
+        if not ekran.get():
+            sonuc_yazisi.config(text="Lütfen bir işlem girin.")
+            return
+
+        sonuc = eval(ekran.get())  # Dikkat: eval güvenlik riski taşıyabilir!  Daha güvenli bir yöntem tercih edilmelidir.
+        ekran.delete(0, tk.END)
+        ekran.insert(0, sonuc)
+        sonuc_yazisi.config(text="")
+
+    except (SyntaxError, NameError, ZeroDivisionError, Exception) as e:
+        sonuc_yazisi.config(text=f"Hata: {e}")
+
+    except Exception as e:
+        sonuc_yazisi.config(text=f"Bir hata oluştu: {e}")
+
+
+# Tkinter penceresi
+pencere = tk.Tk()
+pencere.title("Tuşlu Hesap Makinesi")
+
+# Ekran
+ekran = tk.Entry(pencere, width=30, borderwidth=5)
+ekran.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
+# Sayı tuşları
+tuslar = [
+    '7', '8', '9', '/',
+    '4', '5', '6', '*',
+    '1', '2', '3', '-',
+    '0', '.', '=', '+'
+]
+
+row = 1
+col = 0
+for tus in tuslar:
+    buton = tk.Button(pencere, text=tus, padx=20, pady=10, command=lambda tus=tus: ekle(tus))
+    buton.grid(row=row, column=col, padx=5, pady=5)
+    col += 1
+    if col > 3:
+        col = 0
+        row += 1
+
+# Temizle butonu
+temizle_butonu = tk.Button(pencere, text="C", padx=20, pady=10, command=lambda: ekran.delete(0, tk.END))
+temizle_butonu.grid(row=row, column=0, columnspan=2, padx=5, pady=5)
+
+# Hesapla butonu
+hesapla_butonu = tk.Button(pencere, text="=", padx=20, pady=10, command=hesapla)
+hesapla_butonu.grid(row=row, column=2, columnspan=2, padx=5, pady=5)
+
+
+# Sonuç etiketi
+sonuc_yazisi = tk.Label(pencere, text="")
+sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
+
+pencere.mainloop()
