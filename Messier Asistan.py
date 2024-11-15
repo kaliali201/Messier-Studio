@@ -1,14 +1,21 @@
+
 import tkinter as tk
 import datetime
 import webbrowser
 import urllib.parse
-
+import time
+from playsound import playsound
+file = r"C:\Users\Kaan\Desktop\projeler\Galaxy-Note-4-Melody.mp3"
 def selamla():
     mesaj_alani.insert(tk.END, "Merhaba! Sana nasıl yardımcı olabilirim?\n")
 
 def zaman_sor():
     simdi = datetime.datetime.now()
-    mesaj_alani.insert(tk.END, f"Şu anki zaman: {simdi.strftime('%H:%M:%S')}\n")
+    zaman_metni = f"Şu anki zaman: {simdi.strftime('%H:%M:%S')}\n"
+    mesaj_alani.config(state=tk.NORMAL) # Yazma yeteneğini etkinleştir
+    mesaj_alani.insert(tk.END, zaman_metni)
+    mesaj_alani.config(state=tk.DISABLED) # Yazma yeteneğini devre dışı bırak
+
 
 def duckduckgo(arama_terimi):
     url = "https://duckduckgo.com/?q=" + urllib.parse.quote(arama_terimi)
@@ -37,11 +44,16 @@ def komut_islec(event=None):
         zaman_sor()
     elif komut.startswith("arama"):
         arama_terimi = komut[6:]
-        duckduckgo(arama_terimi)
+        duckduckgo(arama_terimi)         
     elif komut == "yapayzeka" or komut == "messier ai":
         poe_ac()
     elif komut == "çıkış":
         pencere.destroy()
+    elif komut.startswith("zamanlayıcı"):
+        saniye = int(komut[12:]) # Hata fırlatabilir!
+        dakika = saniye * 60       
+        time.sleep(dakika)         
+        playsound(file) # Hata fırlatabilir!
     else:
         mesaj_alani.insert(tk.END, "Geçersiz komut.\n")
 
