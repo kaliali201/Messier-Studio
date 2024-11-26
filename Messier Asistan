@@ -6,13 +6,12 @@ import time
 import os
 from playsound import playsound
 from googleapiclient.discovery import build
+from bs4 import BeautifulSoup
+
+API_KEY = "YOUR_API_KEY"  # BU SATIRI KENDİ API ANAHTARINIZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
+CSE_ID = "YOUR_CSE_ID"    # BU SATIRI KENDİ CSE ID'NİZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
 
 default_sound_file = r"Galaxy-Note-4-Melody.mp3"  # Ses dosyası yolu
-
-# API anahtarını ve CSE ID'sini burada tanımlayın.  Güvenlik açısından riskli!dir
-API_KEY = "YOUR_API_KEY"  # BURAYA GERÇEK API ANAHTARINIZI YAZIN
-CSE_ID = "YOUR_CSE_ID"     # BURAYA GERÇEK CSE ID'NIZI YAZIN
-
 
 if not os.path.exists(default_sound_file):
     uyari_mesaji = "Uyarı: Varsayılan ses dosyası bulunamadı. Zamanlayıcı sesi çalınmayacak.\n"
@@ -89,7 +88,9 @@ def komut_islec(event=None):
                 ekle_mesaj(results + "\n")
             else:
                 for result in results:
-                    ekle_mesaj(f"Başlık: {result.get('title', 'Başlık Yok')}\nURL: {result.get('link', 'URL Yok')}\n\n")
+                    title = result.get('title', 'Başlık Yok')
+                    link = result.get('link', 'URL Yok')
+                    ekle_mesaj(f"Başlık: {title}\nURL: <a href='{link}'>{link}</a>\n\n")
         elif komut == "yapayzeka" or komut == "messier ai":
             poe_ac()
         elif komut == "çıkış":
@@ -108,8 +109,24 @@ def komut_islec(event=None):
 def ekle_mesaj(mesaj):
     mesaj_alani.config(state=tk.NORMAL)
     mesaj_alani.insert(tk.END, mesaj)
+    mesaj_alani.tag_config("link", foreground="blue", underline=1)
     mesaj_alani.config(state=tk.DISABLED)
     mesaj_alani.see(tk.END)
+
+
+def open_link(event):
+    try:
+        current_index = float(mesaj_alani.index(tk.CURRENT))
+        soup = BeautifulSoup(mesaj_alani.get("1.0", tk.END), 'html.parser')
+        links = [a['href'] for a in soup.find_all('a', href=True)]
+
+        if links:
+            webbrowser.open(links[int(current_index // 4)])
+
+    except (IndexError, ValueError, AttributeError, tk.TclError) as e:
+        print(f"Link açılırken bir hata oluştu: {e}")
+    except Exception as e:
+        print(f"Beklenmedik bir hata oluştu: {e}")
 
 
 pencere = tk.Tk()
@@ -125,9 +142,10 @@ giris_alani.bind("<Return>", komut_islec)
 komut_butonu = tk.Button(pencere, text="Gönder", command=komut_islec)
 komut_butonu.pack(pady=5)
 
-mesaj_alani = tk.Text(pencere, height=10, width=40)
+mesaj_alani = tk.Text(pencere, height=10, width=40, wrap=tk.WORD)
 mesaj_alani.pack(pady=5)
 mesaj_alani.config(state=tk.DISABLED)
+mesaj_alani.bind("<Button-1>", open_link)
 
 mesaj_alani.config(state=tk.NORMAL)
 mesaj_alani.insert(tk.END, uyari_mesaji)
