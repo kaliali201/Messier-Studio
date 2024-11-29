@@ -7,6 +7,8 @@ import os
 from playsound import playsound
 from googleapiclient.discovery import build
 from bs4 import BeautifulSoup
+from translate import Translator
+
 
 API_KEY = "YOUR_API_KEY"  # BU SATIRI KENDİ API ANAHTARINIZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
 CSE_ID = "YOUR_CSE_ID"    # BU SATIRI KENDİ CSE ID'NİZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
@@ -17,7 +19,102 @@ if not os.path.exists(default_sound_file):
     uyari_mesaji = "Uyarı: Varsayılan ses dosyası bulunamadı. Zamanlayıcı sesi çalınmayacak.\n"
 else:
     uyari_mesaji = ""
+def hesapmakinesi():
+    def ekle(deger):
+        ekran.insert(tk.END, deger)
 
+    def hesapla():
+        try:
+            if not ekran.get():
+                sonuc_yazisi.config(text="Lütfen bir işlem girin.")
+                return
+            sonuc = eval(ekran.get()) # Güvenlik açığı!  Düzeltmeniz gerekiyor!
+            ekran.delete(0, tk.END)
+            ekran.insert(0, sonuc)
+            sonuc_yazisi.config(text="")
+        except (SyntaxError, NameError, ZeroDivisionError, Exception) as e:
+            sonuc_yazisi.config(text=f"Hata: {e}")
+
+    pencere_hesap = tk.Toplevel()
+    pencere_hesap.title("Tuşlu Hesap Makinesi")
+
+    ekran = tk.Entry(pencere_hesap, width=30, borderwidth=5)
+    ekran.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
+
+    tuslar = [
+        '7', '8', '9', '/',
+        '4', '5', '6', '*',
+        '1', '2', '3', '-',
+        '0', '.', '=', '+'
+    ]
+
+    row = 1
+    col = 0
+    for tus in tuslar:
+        buton = tk.Button(pencere_hesap, text=tus, padx=20, pady=10, command=lambda tus=tus: ekle(tus))
+        buton.grid(row=row, column=col, padx=5, pady=5)
+        col += 1
+        if col > 3:
+            col = 0
+            row += 1
+
+    temizle_butonu = tk.Button(pencere_hesap, text="C", padx=20, pady=10, command=lambda: ekran.delete(0, tk.END))
+    temizle_butonu.grid(row=row, column=0, columnspan=2, padx=5, pady=5)
+
+    hesapla_butonu = tk.Button(pencere_hesap, text="=", padx=20, pady=10, command=hesapla)
+    hesapla_butonu.grid(row=row, column=2, columnspan=2, padx=5, pady=5)
+
+    sonuc_yazisi = tk.Label(pencere_hesap, text="")
+    sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
+
+def çeviri():
+    def cevir():
+        try:
+            metin = giris_alani.get("1.0", tk.END).strip()
+            kaynak_dil = kaynak_dil_menu.get()
+            hedef_dil = hedef_dil_menu.get()
+
+            translator = Translator(to_lang=hedef_dil, from_lang=kaynak_dil)
+            ceviri = translator.translate(metin)
+            cikti_alani.delete("1.0", tk.END)
+            cikti_alani.insert(tk.END, ceviri)
+
+        except Exception as e:
+            cikti_alani.delete("1.0", tk.END)
+            cikti_alani.insert(tk.END, f"Hata: {e}")
+
+
+    # Tkinter penceresi
+    pencere = tk.Tk()
+    pencere.title("Messier Translator")
+
+    # Giriş alanı (aynı önceki kodla)
+    giris_etiketi = tk.Label(pencere, text="Çevirilecek Metin:")
+    giris_etiketi.pack(pady=5)
+    giris_alani = tk.Text(pencere, height=5, width=40)
+    giris_alani.pack(pady=5)
+
+    # Kaynak dil menüsü (aynı önceki kodla)
+    kaynak_dil_menu = tk.StringVar(pencere)
+    kaynak_dil_menu.set("tr")
+    kaynak_dil_menu_secimi = tk.OptionMenu(pencere, kaynak_dil_menu, "tr", "en", "es", "fr", "de")
+    kaynak_dil_menu_secimi.pack(pady=5)
+
+    # Hedef dil menüsü (aynı önceki kodla)
+    hedef_dil_menu = tk.StringVar(pencere)
+    hedef_dil_menu.set("en")
+    hedef_dil_menu_secimi = tk.OptionMenu(pencere, hedef_dil_menu, "tr", "en", "es", "fr", "de")
+    hedef_dil_menu_secimi.pack(pady=5)
+
+    # Çevir butonu (aynı önceki kodla)
+    cevir_butonu = tk.Button(pencere, text="Çevir", command=cevir)
+    cevir_butonu.pack(pady=10)
+
+    # Çıktı alanı (aynı önceki kodla)
+    cikti_etiketi = tk.Label(pencere, text="Çeviri:")
+    cikti_etiketi.pack(pady=5)
+    cikti_alani = tk.Text(pencere, height=5, width=40)
+    cikti_alani.pack(pady=5)
 
 def google_search(query):
     try:
@@ -93,6 +190,10 @@ def komut_islec(event=None):
                     ekle_mesaj(f"Başlık: {title}\nURL: <a href='{link}'>{link}</a>\n\n")
         elif komut == "yapayzeka" or komut == "messier ai":
             poe_ac()
+        elif komut.startswith("hesap makinesi"):
+            hesapmakinesi()
+        elif komut.startswith("çeviri"):
+            çeviri()
         elif komut == "çıkış":
             pencere.destroy()
         elif komut.startswith("zamanlayıcı"):
