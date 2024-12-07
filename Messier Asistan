@@ -8,10 +8,11 @@ from playsound import playsound
 from googleapiclient.discovery import build
 from bs4 import BeautifulSoup
 from translate import Translator
+from tkinter import messagebox
+from tkinter import ttk
+from functools import partial
 
 
-API_KEY = "YOUR_API_KEY"  # BU SATIRI KENDİ API ANAHTARINIZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
-CSE_ID = "YOUR_CSE_ID"    # BU SATIRI KENDİ CSE ID'NİZ İLE DEĞİŞTİRİN. GÜVENLİ DEĞİL!
 
 default_sound_file = r"Galaxy-Note-4-Melody.mp3"  # Ses dosyası yolu
 
@@ -117,13 +118,69 @@ def çeviri():
     cikti_alani.pack(pady=5)
 
 def google_search(query):
-    try:
+    API_KEY = "YOUR_API_KEY"  # YOUR API KEY HERE.  LÜTFEN KENDİ ANAHTARINIZI YAZIN!
+    CSE_ID = "YOUR_CSE_ID"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
+
+    def google_search(search_query):
         service = build("customsearch", "v1", developerKey=API_KEY)
-        res = service.cse().list(q=query, cx=CSE_ID).execute()
-        results = res.get('items', [])
-        return results
-    except Exception as e:
-        return f"Google Arama hatası: {e}"
+        try:
+            res = service.cse().list(q=search_query, cx=CSE_ID).execute()
+            return res.get("items", [])
+        except Exception as e:
+            messagebox.showerror("Hata", f"Google Arama hatası: {e}")
+            return []
+
+    def display_results(results):
+        for child in result_tree.get_children():
+            result_tree.delete(child) # önceki sonuçları temizle
+
+        if results:
+            for result in results:
+                title = result.get('title', 'Başlık Yok')
+                link = result.get('link', 'URL Yok')
+                snippet = result.get('snippet', '')
+
+                result_tree.insert("", "end", text=title, values=(link, snippet))
+
+        else:
+            result_tree.insert("", "end", text="Sonuç bulunamadı.", values=("", ""))
+
+    def open_link(event):
+        item = result_tree.selection()[0]
+        link = result_tree.item(item)['values'][0]
+        webbrowser.open(link)
+
+
+    def search_button_clicked():
+        search_query = search_entry.get()
+        if not search_query:
+            messagebox.showwarning("Uyarı", "Lütfen bir arama sorgusu girin.")
+            return
+        results = google_search(search_query)
+        display_results(results)
+
+    root = tk.Tk()
+    root.title("Messier Go")
+
+
+    search_label = tk.Label(root, text="Arama Sorgusu:")
+    search_label.pack(pady=5)
+
+    search_entry = tk.Entry(root, width=40)
+    search_entry.pack(pady=5)
+
+    search_button = tk.Button(root, text="Ara", command=search_button_clicked)
+    search_button.pack(pady=5)
+
+    # Treeview kullanarak kaydırma
+    result_tree = ttk.Treeview(root, columns=("link", "snippet"), show="headings")
+    result_tree.heading("link", text="Link")
+    result_tree.heading("snippet", text="Özet")
+    result_tree.column("link", width=200, stretch=tk.NO)
+    result_tree.column("snippet", width=400, stretch=tk.YES)
+    result_tree.pack(expand=True, fill=tk.BOTH)
+    result_tree.bind("<Double-1>", open_link) # Double click ile link açma
+
 
 
 def selamla():
@@ -181,13 +238,7 @@ def komut_islec(event=None):
         elif komut.startswith("arama"):
             arama_terimi = komut[6:]
             results = google_search(arama_terimi)
-            if isinstance(results, str):
-                ekle_mesaj(results + "\n")
-            else:
-                for result in results:
-                    title = result.get('title', 'Başlık Yok')
-                    link = result.get('link', 'URL Yok')
-                    ekle_mesaj(f"Başlık: {title}\nURL: <a href='{link}'>{link}</a>\n\n")
+
         elif komut == "yapayzeka" or komut == "messier ai":
             poe_ac()
         elif komut.startswith("hesap makinesi"):
