@@ -1,0 +1,68 @@
+import csv
+import tkinter as tk
+from tkinter import messagebox, scrolledtext
+import os
+
+def tdk_kelime_islemleri(dosya_adi):
+    """TDK kelime verilerini işleyen bir fonksiyon (Tkinter ile entegre)."""
+
+    try:
+        with open(dosya_adi, 'r', encoding='utf-8') as dosya:
+            oku = csv.DictReader(dosya)
+            veriler = list(oku)
+
+        def yazdir_tum_anlamlar():
+            sonuc = "\n".join([f"'{satir['madde']}': '{satir['anlam']}'" for satir in veriler])
+            sonuc_pencere = tk.Toplevel(root)
+            sonuc_pencere.title("Tüm Anlamlar")
+            sonuc_text = scrolledtext.ScrolledText(sonuc_pencere, wrap=tk.WORD)
+            sonuc_text.insert(tk.END, sonuc)
+            sonuc_text.pack(expand=True, fill="both", padx=10, pady=10)
+            sonuc_text.config(state=tk.DISABLED)
+
+        def bul_anlam():
+            aranan_madde = giris_alanı.get()
+            bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
+            sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
+            sonuc_alani.delete("1.0", tk.END)
+            if bulunan:
+                sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
+            else:
+                sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
+            sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
+
+
+        root = tk.Tk()
+        root.title("MessierLexicon")
+        root.geometry("600x400")
+
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
+
+
+        tk.Label(root, text="Madde Girin:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+
+        giris_alanı = tk.Entry(root)
+        giris_alanı.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+
+        tk.Button(root, text="Tüm Anlamları Yazdır", command=yazdir_tum_anlamlar).grid(row=2, column=0, sticky="ew", padx=5, pady=5)
+        tk.Button(root, text="Anlam Bul", command=bul_anlam).grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+
+
+        sonuc_alani = scrolledtext.ScrolledText(root, wrap=tk.WORD)
+        sonuc_alani.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
+        sonuc_alani.config(state=tk.DISABLED)
+
+
+        root.mainloop()
+
+    except FileNotFoundError:
+        messagebox.showerror("Hata", f"Hata: '{dosya_adi}' dosyası bulunamadı.")
+    except KeyError as e:
+        messagebox.showerror("Hata", f"Hata: '{e}' sütunu dosyada bulunamadı. Lütfen verilerinizin yapısını kontrol edin.")
+    except Exception as e:
+        messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
+
+
+dosya_adi = "tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
+tdk_kelime_islemleri(dosya_adi)
