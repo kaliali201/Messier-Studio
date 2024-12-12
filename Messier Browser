@@ -1,0 +1,49 @@
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtCore import QUrl
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()  # Bu satırı düzelttim!
+        self.browser= QWebEngineView()
+        self.browser.setUrl(QUrl("https://duckduckgo.com/"))
+        self.setCentralWidget(self.browser)
+        self.showMaximized()
+        #geri
+        navbar=QToolBar()
+        self.addToolBar(navbar)
+        backButton= QAction("←", self)
+        backButton.triggered.connect(self.browser.back)
+        navbar.addAction(backButton)
+        #ileri
+        forwardButton= QAction("→", self)
+        forwardButton.triggered.connect(self.browser.forward)
+        navbar.addAction(forwardButton)
+        #yenile
+        reloadButton = QAction("↻", self)
+        reloadButton.triggered.connect(self.browser.reload)
+        navbar.addAction(reloadButton)
+        #anasayfa
+        HomeButton= QAction("Ana Sayfa", self)
+        HomeButton.triggered.connect(self.navigate_home)
+        navbar.addAction(HomeButton)
+
+        self.url_bar=QLineEdit()
+        self.url_bar.returnPressed.connect(self.navigate_to_url)
+        navbar.addWidget(self.url_bar)
+        self.browser.urlChanged.connect(self.update_url)
+
+    def navigate_home(self):
+        self.browser.setUrl(QUrl("https://duckduckgo.com/"))
+    def navigate_to_url(self):
+        url= self.url_bar.text()
+        self.browser.setUrl(QUrl(url))
+    def update_url(self, q):
+        self.url_bar.setText(q.toString())
+
+
+app= QApplication(sys.argv)
+QApplication.setApplicationName("Messier Browser")
+window= MainWindow()
+app.exec_()
