@@ -1,49 +1,108 @@
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtWebEngineWidgets import *
-from PyQt5.QtCore import QUrl
+from PyQt5.QtCore import QUrl, Qt
+from googleapiclient.discovery import build
+from PyQt5.QtGui import QIcon
+
+# API anahtarınızı ve CSE ID'nizi BU KISMA DEĞİL, güvenli bir yere koyun!
+api_key = "YOUR_API_KEY"
+search_engine_id = "YOUR_CSE_ID"
+
+class SearchEngine(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.service = build("customsearch", "v1", developerKey=api_key)
+        self.setWindowTitle("Messier Go")
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Arama yap...")
+        self.search_box.returnPressed.connect(self.search)
+        self.search_button = QPushButton("Ara")
+        self.search_button.clicked.connect(self.search)
+        self.results_list = QListWidget()
+        self.results_list.setStyleSheet("QListWidget::item { height: 40px; }")
+        self.results_list.itemClicked.connect(self.open_link)
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(self.results_list)
+        layout = QVBoxLayout()
+        layout.addWidget(self.search_box)
+        layout.addWidget(self.search_button)
+        layout.addWidget(scroll_area)
+        self.setLayout(layout)
+
+    def search(self):
+        query = self.search_box.text()
+        if not query:
+            return
+        self.results_list.clear()
+        try:
+            response = self.service.cse().list(q=query, cx=search_engine_id).execute()
+            for item in response['items']:
+                list_item = QListWidgetItem(item['title'])
+                list_item.setData(Qt.ToolTipRole, item['snippet'])
+                list_item.setData(Qt.UserRole, item['link'])
+                self.results_list.addItem(list_item)
+        except Exception as e:
+            print(f"Hata: {e}")
+            self.results_list.addItem(QListWidgetItem("Arama sırasında bir hata oluştu."))
+
+    def open_link(self, item):
+        link = item.data(Qt.UserRole)
+        QApplication.clipboard().setText(link)
+        print(f"Link kopyalandı: {link}")
+
+    def closeEvent(self, event):
+        self.deleteLater()
+        event.accept()
+
+
+search_engine_window = None
+
+def messier_go():
+    global search_engine_window
+    if search_engine_window is None or not search_engine_window.isVisible():
+        search_engine_window = SearchEngine()
+    search_engine_window.show()
+    search_engine_window.raise_()
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        super().__init__()  # Bu satırı düzelttim!
-        self.browser= QWebEngineView()
+        super().__init__()
+        self.browser = QWebEngineView()
         self.browser.setUrl(QUrl("https://duckduckgo.com/"))
         self.setCentralWidget(self.browser)
         self.showMaximized()
-        #geri
-        navbar=QToolBar()
+        navbar = QToolBar()
         self.addToolBar(navbar)
-        backButton= QAction("←", self)
+        backButton = QAction("←", self)
         backButton.triggered.connect(self.browser.back)
         navbar.addAction(backButton)
-        #ileri
-        forwardButton= QAction("→", self)
+        forwardButton = QAction("→", self)
         forwardButton.triggered.connect(self.browser.forward)
         navbar.addAction(forwardButton)
-        #yenile
         reloadButton = QAction("↻", self)
         reloadButton.triggered.connect(self.browser.reload)
         navbar.addAction(reloadButton)
-        #anasayfa
-        HomeButton= QAction("Ana Sayfa", self)
-        HomeButton.triggered.connect(self.navigate_home)
+        HomeButton = QAction("Messier Go", self)
+        HomeButton.triggered.connect(messier_go)
         navbar.addAction(HomeButton)
-
-        self.url_bar=QLineEdit()
+        self.url_bar = QLineEdit()
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         navbar.addWidget(self.url_bar)
         self.browser.urlChanged.connect(self.update_url)
 
-    def navigate_home(self):
-        self.browser.setUrl(QUrl("https://duckduckgo.com/"))
     def navigate_to_url(self):
-        url= self.url_bar.text()
+        url = self.url_bar.text()
         self.browser.setUrl(QUrl(url))
+
     def update_url(self, q):
         self.url_bar.setText(q.toString())
 
 
-app= QApplication(sys.argv)
-QApplication.setApplicationName("Messier Browser")
-window= MainWindow()
-app.exec_()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec_())
