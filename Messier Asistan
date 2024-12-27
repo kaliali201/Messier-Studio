@@ -4,13 +4,16 @@ import webbrowser
 import urllib.parse
 import time
 import os
-from playsound import playsound
+from playsound3 import playsound
 from googleapiclient.discovery import build
 from bs4 import BeautifulSoup
 from translate import Translator
 from tkinter import messagebox
 from tkinter import ttk
 from functools import partial
+import csv
+from tkinter import messagebox, scrolledtext
+import os
 
 
 
@@ -67,6 +70,71 @@ def hesapmakinesi():
 
     sonuc_yazisi = tk.Label(pencere_hesap, text="")
     sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
+
+def sozluk():
+
+    def tdk_kelime_islemleri(dosya_adi):
+        """TDK kelime verilerini işleyen bir fonksiyon (Tkinter ile entegre)."""
+
+        try:
+            with open(dosya_adi, 'r', encoding='utf-8') as dosya:
+                oku = csv.DictReader(dosya)
+                veriler = list(oku)
+
+            def yazdir_tum_anlamlar():
+                sonuc = "\n".join([f"'{satir['madde']}': '{satir['anlam']}'" for satir in veriler])
+                sonuc_pencere = tk.Toplevel(root)
+                sonuc_pencere.title("Tüm Anlamlar")
+                sonuc_text = scrolledtext.ScrolledText(sonuc_pencere, wrap=tk.WORD)
+                sonuc_text.insert(tk.END, sonuc)
+                sonuc_text.pack(expand=True, fill="both", padx=10, pady=10)
+                sonuc_text.config(state=tk.DISABLED)
+
+            def bul_anlam():
+                aranan_madde = giris_alanı.get()
+                bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
+                sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
+                sonuc_alani.delete("1.0", tk.END)
+                if bulunan:
+                    sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
+                else:
+                    sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
+                sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
+
+
+            root = tk.Tk()
+            root.title("MessierLexicon")
+            root.geometry("600x400")
+
+            root.grid_rowconfigure(0, weight=1)
+            root.grid_columnconfigure(0, weight=1)
+
+
+            tk.Label(root, text="Madde Girin:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+
+            giris_alanı = tk.Entry(root)
+            giris_alanı.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
+
+            tk.Button(root, text="Tüm Anlamları Yazdır", command=yazdir_tum_anlamlar).grid(row=2, column=0, sticky="ew", padx=5, pady=5)
+            tk.Button(root, text="Anlam Bul", command=bul_anlam).grid(row=3, column=0, sticky="ew", padx=5, pady=5)
+
+
+            sonuc_alani = scrolledtext.ScrolledText(root, wrap=tk.WORD)
+            sonuc_alani.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
+            sonuc_alani.config(state=tk.DISABLED)
+
+
+
+        except FileNotFoundError:
+            messagebox.showerror("Hata", f"Hata: '{dosya_adi}' dosyası bulunamadı.")
+        except KeyError as e:
+            messagebox.showerror("Hata", f"Hata: '{e}' sütunu dosyada bulunamadı. Lütfen verilerinizin yapısını kontrol edin.")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
+
+
+    dosya_adi = "tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
+    tdk_kelime_islemleri(dosya_adi)
 
 def çeviri():
     def cevir():
@@ -181,72 +249,7 @@ def google_search(query):
     result_tree.pack(expand=True, fill=tk.BOTH)
     result_tree.bind("<Double-1>", open_link) # Double click ile link açma
 
-def sozluk():
-    import csv
-    import tkinter as tk
-    from tkinter import messagebox, scrolledtext
-    import os
 
-    def tdk_kelime_islemleri(dosya_adi):
-        """TDK kelime verilerini işleyen bir fonksiyon (Tkinter ile entegre)."""
-
-        try:
-            with open(dosya_adi, 'r', encoding='utf-8') as dosya:
-                oku = csv.DictReader(dosya)
-                veriler = list(oku)
-
-            def yazdir_tum_anlamlar():
-                sonuc = "\n".join([f"'{satir['madde']}': '{satir['anlam']}'" for satir in veriler])
-                sonuc_pencere = tk.Toplevel(root)
-                sonuc_pencere.title("Tüm Anlamlar")
-                sonuc_text = scrolledtext.ScrolledText(sonuc_pencere, wrap=tk.WORD)
-                sonuc_text.insert(tk.END, sonuc)
-                sonuc_text.pack(expand=True, fill="both", padx=10, pady=10)
-                sonuc_text.config(state=tk.DISABLED)
-
-            def bul_anlam():
-                aranan_madde = giris_alanı.get()
-                bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
-                sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
-                sonuc_alani.delete("1.0", tk.END)
-                if bulunan:
-                    sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
-                else:
-                    sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
-                sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
-
-
-            root = tk.Tk()
-            root.title("MessierLexicon")
-            root.geometry("600x400")
-
-            root.grid_rowconfigure(0, weight=1)
-            root.grid_columnconfigure(0, weight=1)
-
-
-            tk.Label(root, text="Madde Girin:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
-
-            giris_alanı = tk.Entry(root)
-            giris_alanı.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-
-            tk.Button(root, text="Tüm Anlamları Yazdır", command=yazdir_tum_anlamlar).grid(row=2, column=0, sticky="ew", padx=5, pady=5)
-            tk.Button(root, text="Anlam Bul", command=bul_anlam).grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-
-
-            sonuc_alani = scrolledtext.ScrolledText(root, wrap=tk.WORD)
-            sonuc_alani.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
-            sonuc_alani.config(state=tk.DISABLED)
-
-        except FileNotFoundError:
-            messagebox.showerror("Hata", f"Hata: '{dosya_adi}' dosyası bulunamadı.")
-        except KeyError as e:
-            messagebox.showerror("Hata", f"Hata: '{e}' sütunu dosyada bulunamadı. Lütfen verilerinizin yapısını kontrol edin.")
-        except Exception as e:
-            messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
-
-
-    dosya_adi = "tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
-    tdk_kelime_islemleri(dosya_adi)
 
 def selamla():
     mesaj_alani.insert(tk.END, "Merhaba! Sana nasıl yardımcı olabilirim?\n")
@@ -257,7 +260,10 @@ def zaman_sor():
     zaman_metni = f"Şu anki zaman: {simdi.strftime('%H:%M:%S')}\n"
     ekle_mesaj(zaman_metni)
 
-
+def tarıh():
+    simdi = datetime.datetime.now()
+    zaman_metni = f"Şu anki tarih: {simdi.strftime('%d/%m/%Y')}\n"
+    ekle_mesaj(zaman_metni)
 
 def poe_ac():
     try:
@@ -290,6 +296,15 @@ def zamanlayici(dakika):
     except Exception as e:
         ekle_mesaj(f"Hata: Zamanlayıcıda beklenmedik bir hata oluştu: {e}\n")
 
+def notlar():
+    
+    tab = tk.Tk()
+    tab.title("Notlar")
+
+    not_bölümü = tk.Text(tab, wrap=tk.WORD)
+    not_bölümü.pack(expand=True, fill="both")
+    tab.minsize(width=175, height=150)
+    tab.maxsize(width=250, height=200)
 
 def komut_islec(event=None):
     komut = giris_alani.get().lower()
@@ -303,17 +318,24 @@ def komut_islec(event=None):
         elif komut.startswith("arama"):
             arama_terimi = komut[6:]
             results = google_search(arama_terimi)
+        
+        elif komut =="tarih":
+            tarıh()
 
         elif komut == "yapayzeka" or komut == "messier ai":
             poe_ac()
-        elif komut == "sözlük":
-            sozluk()
         elif komut.startswith("hesap makinesi"):
             hesapmakinesi()
         elif komut.startswith("çeviri"):
             çeviri()
         elif komut == "çıkış":
             pencere.destroy()
+        elif komut== "notlar":
+            notlar()
+
+        elif komut=="sözlük":
+            sozluk()
+        
         elif komut.startswith("zamanlayıcı"):
             try:
                 dakika = komut[11:]
