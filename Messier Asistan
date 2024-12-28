@@ -249,6 +249,12 @@ def google_search(query):
     result_tree.pack(expand=True, fill=tk.BOTH)
     result_tree.bind("<Double-1>", open_link) # Double click ile link açma
 
+def youtube():
+    global yt_search
+    try:
+        webbrowser.open(f"https://www.youtube.com/results?search_query={yt_search}")
+    except Exception as e:
+        ekle_mesaj(f"Hata: Youtube araması yapılamadı: {e}\n")
 
 
 def selamla():
@@ -260,7 +266,7 @@ def zaman_sor():
     zaman_metni = f"Şu anki zaman: {simdi.strftime('%H:%M:%S')}\n"
     ekle_mesaj(zaman_metni)
 
-def tarıh():
+def tarih():
     simdi = datetime.datetime.now()
     zaman_metni = f"Şu anki tarih: {simdi.strftime('%d/%m/%Y')}\n"
     ekle_mesaj(zaman_metni)
@@ -320,7 +326,7 @@ def komut_islec(event=None):
             results = google_search(arama_terimi)
         
         elif komut =="tarih":
-            tarıh()
+            tarih()
 
         elif komut == "yapayzeka" or komut == "messier ai":
             poe_ac()
@@ -332,6 +338,13 @@ def komut_islec(event=None):
             pencere.destroy()
         elif komut== "notlar":
             notlar()
+        elif komut.startswith("!yt"):
+            global yt_search
+            yt_search = komut[4:]
+            youtube()
+
+        elif komut == "messier studio":
+            webbrowser.open("https://sites.google.com/view/messier-studio/ana-sayfa")
 
         elif komut=="sözlük":
             sozluk()
