@@ -4,6 +4,8 @@ from PyQt5.QtWebEngineWidgets import *
 from PyQt5.QtCore import QUrl, Qt
 from googleapiclient.discovery import build
 from PyQt5.QtGui import QIcon
+import webbrowser
+
 
 # API anahtarınızı ve CSE ID'nizi BU KISMA DEĞİL, güvenli bir yere koyun!
 api_key = "YOUR_API_KEY"
@@ -66,39 +68,67 @@ def messier_go():
     search_engine_window.show()
     search_engine_window.raise_()
 
-
-class MainWindow(QMainWindow):
+class TabWidget(QTabWidget):
     def __init__(self):
         super().__init__()
-        self.browser = QWebEngineView()
-        self.browser.setUrl(QUrl("https://duckduckgo.com/"))
-        self.setCentralWidget(self.browser)
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.closeTab)
+        self.newTab()
+
+    def newTab(self):
+        browser = QWebEngineView()
+        browser.setUrl(QUrl("https://duckduckgo.com/"))
+        index = self.addTab(browser, "Yeni Sekme")
+        self.setCurrentIndex(index)
+
+    def closeTab(self, index):
+        self.removeTab(index)
+
+class MainWindow(QMainWindow):
+    def messier_AI(self):
+        webbrowser.open("https://poe.com/Messier_AI")
+
+
+
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Messier Browser") # Başlık eklendi
+        self.tab_widget = TabWidget()
+        self.setCentralWidget(self.tab_widget)
         self.showMaximized()
         navbar = QToolBar()
         self.addToolBar(navbar)
         backButton = QAction("←", self)
-        backButton.triggered.connect(self.browser.back)
+        backButton.triggered.connect(self.tab_widget.currentWidget().back)
         navbar.addAction(backButton)
         forwardButton = QAction("→", self)
-        forwardButton.triggered.connect(self.browser.forward)
+        forwardButton.triggered.connect(self.tab_widget.currentWidget().forward)
         navbar.addAction(forwardButton)
         reloadButton = QAction("↻", self)
-        reloadButton.triggered.connect(self.browser.reload)
+        reloadButton.triggered.connect(self.tab_widget.currentWidget().reload)
         navbar.addAction(reloadButton)
-        HomeButton = QAction("Messier Go", self)
-        HomeButton.triggered.connect(messier_go)
-        navbar.addAction(HomeButton)
+        newTabButton = QAction("+", self)
+        newTabButton.triggered.connect(self.tab_widget.newTab)
+        navbar.addAction(newTabButton)
+        SearchButton = QAction("Messier Go", self)
+        SearchButton.triggered.connect(messier_go)
+        navbar.addAction(SearchButton)
+        AIButton = QAction("Messier_AI", self)
+        AIButton.triggered.connect(self.messier_AI)
+        navbar.addAction(AIButton)
         self.url_bar = QLineEdit()
         self.url_bar.returnPressed.connect(self.navigate_to_url)
         navbar.addWidget(self.url_bar)
-        self.browser.urlChanged.connect(self.update_url)
+        self.tab_widget.currentChanged.connect(self.update_url)
+
 
     def navigate_to_url(self):
         url = self.url_bar.text()
-        self.browser.setUrl(QUrl(url))
+        self.tab_widget.currentWidget().setUrl(QUrl(url))
 
-    def update_url(self, q):
-        self.url_bar.setText(q.toString())
+    def update_url(self, index):
+        if index != -1:
+            self.url_bar.setText(self.tab_widget.currentWidget().url().toString())
 
 
 if __name__ == "__main__":
