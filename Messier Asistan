@@ -1,193 +1,29 @@
+import speech_recognition as sr
 import tkinter as tk
-import datetime
+from tkinter import scrolledtext
+from datetime import datetime
 import webbrowser
-import urllib.parse
-import time
-import os
+from gtts import gTTS
 from playsound3 import playsound
-from googleapiclient.discovery import build
-from bs4 import BeautifulSoup
-from translate import Translator
-from tkinter import messagebox
-from tkinter import ttk
-from functools import partial
-import csv
-from tkinter import messagebox, scrolledtext
+import random
 import os
+import threading
+import time
+from tkinter import ttk
+from googleapiclient.discovery import build
+from tkinter import messagebox
+from functools import partial
+from tkinter import messagebox, scrolledtext
+import csv
+from translate import Translator
 
+sesdosyasi= r"Galaxy-Note-4-Melody.mp3"
 
+r = sr.Recognizer()
 
-default_sound_file = r"Galaxy-Note-4-Melody.mp3"  # Ses dosyası yolu
-
-if not os.path.exists(default_sound_file):
-    uyari_mesaji = "Uyarı: Varsayılan ses dosyası bulunamadı. Zamanlayıcı sesi çalınmayacak.\n"
-else:
-    uyari_mesaji = ""
-def hesapmakinesi():
-    def ekle(deger):
-        ekran.insert(tk.END, deger)
-
-    def hesapla():
-        try:
-            if not ekran.get():
-                sonuc_yazisi.config(text="Lütfen bir işlem girin.")
-                return
-            sonuc = eval(ekran.get()) # Güvenlik açığı!  Düzeltmeniz gerekiyor!
-            ekran.delete(0, tk.END)
-            ekran.insert(0, sonuc)
-            sonuc_yazisi.config(text="")
-        except (SyntaxError, NameError, ZeroDivisionError, Exception) as e:
-            sonuc_yazisi.config(text=f"Hata: {e}")
-
-    pencere_hesap = tk.Toplevel()
-    pencere_hesap.title("Tuşlu Hesap Makinesi")
-
-    ekran = tk.Entry(pencere_hesap, width=30, borderwidth=5)
-    ekran.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
-
-    tuslar = [
-        '7', '8', '9', '/',
-        '4', '5', '6', '*',
-        '1', '2', '3', '-',
-        '0', '.', '=', '+'
-    ]
-
-    row = 1
-    col = 0
-    for tus in tuslar:
-        buton = tk.Button(pencere_hesap, text=tus, padx=20, pady=10, command=lambda tus=tus: ekle(tus))
-        buton.grid(row=row, column=col, padx=5, pady=5)
-        col += 1
-        if col > 3:
-            col = 0
-            row += 1
-
-    temizle_butonu = tk.Button(pencere_hesap, text="C", padx=20, pady=10, command=lambda: ekran.delete(0, tk.END))
-    temizle_butonu.grid(row=row, column=0, columnspan=2, padx=5, pady=5)
-
-    hesapla_butonu = tk.Button(pencere_hesap, text="=", padx=20, pady=10, command=hesapla)
-    hesapla_butonu.grid(row=row, column=2, columnspan=2, padx=5, pady=5)
-
-    sonuc_yazisi = tk.Label(pencere_hesap, text="")
-    sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
-
-def sozluk():
-
-    def tdk_kelime_islemleri(dosya_adi):
-        """TDK kelime verilerini işleyen bir fonksiyon (Tkinter ile entegre)."""
-
-        try:
-            with open(dosya_adi, 'r', encoding='utf-8') as dosya:
-                oku = csv.DictReader(dosya)
-                veriler = list(oku)
-
-            def yazdir_tum_anlamlar():
-                sonuc = "\n".join([f"'{satir['madde']}': '{satir['anlam']}'" for satir in veriler])
-                sonuc_pencere = tk.Toplevel(root)
-                sonuc_pencere.title("Tüm Anlamlar")
-                sonuc_text = scrolledtext.ScrolledText(sonuc_pencere, wrap=tk.WORD)
-                sonuc_text.insert(tk.END, sonuc)
-                sonuc_text.pack(expand=True, fill="both", padx=10, pady=10)
-                sonuc_text.config(state=tk.DISABLED)
-
-            def bul_anlam():
-                aranan_madde = giris_alanı.get()
-                bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
-                sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
-                sonuc_alani.delete("1.0", tk.END)
-                if bulunan:
-                    sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
-                else:
-                    sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
-                sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
-
-
-            root = tk.Tk()
-            root.title("MessierLexicon")
-            root.geometry("600x400")
-
-            root.grid_rowconfigure(0, weight=1)
-            root.grid_columnconfigure(0, weight=1)
-
-
-            tk.Label(root, text="Madde Girin:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
-
-            giris_alanı = tk.Entry(root)
-            giris_alanı.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
-
-            tk.Button(root, text="Tüm Anlamları Yazdır", command=yazdir_tum_anlamlar).grid(row=2, column=0, sticky="ew", padx=5, pady=5)
-            tk.Button(root, text="Anlam Bul", command=bul_anlam).grid(row=3, column=0, sticky="ew", padx=5, pady=5)
-
-
-            sonuc_alani = scrolledtext.ScrolledText(root, wrap=tk.WORD)
-            sonuc_alani.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
-            sonuc_alani.config(state=tk.DISABLED)
-
-
-
-        except FileNotFoundError:
-            messagebox.showerror("Hata", f"Hata: '{dosya_adi}' dosyası bulunamadı.")
-        except KeyError as e:
-            messagebox.showerror("Hata", f"Hata: '{e}' sütunu dosyada bulunamadı. Lütfen verilerinizin yapısını kontrol edin.")
-        except Exception as e:
-            messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
-
-
-    dosya_adi = "tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
-    tdk_kelime_islemleri(dosya_adi)
-
-def çeviri():
-    def cevir():
-        try:
-            metin = giris_alani.get("1.0", tk.END).strip()
-            kaynak_dil = kaynak_dil_menu.get()
-            hedef_dil = hedef_dil_menu.get()
-
-            translator = Translator(to_lang=hedef_dil, from_lang=kaynak_dil)
-            ceviri = translator.translate(metin)
-            cikti_alani.delete("1.0", tk.END)
-            cikti_alani.insert(tk.END, ceviri)
-
-        except Exception as e:
-            cikti_alani.delete("1.0", tk.END)
-            cikti_alani.insert(tk.END, f"Hata: {e}")
-
-
-    # Tkinter penceresi
-    pencere = tk.Tk()
-    pencere.title("Messier Translator")
-
-    # Giriş alanı (aynı önceki kodla)
-    giris_etiketi = tk.Label(pencere, text="Çevirilecek Metin:")
-    giris_etiketi.pack(pady=5)
-    giris_alani = tk.Text(pencere, height=5, width=40)
-    giris_alani.pack(pady=5)
-
-    # Kaynak dil menüsü (aynı önceki kodla)
-    kaynak_dil_menu = tk.StringVar(pencere)
-    kaynak_dil_menu.set("tr")
-    kaynak_dil_menu_secimi = tk.OptionMenu(pencere, kaynak_dil_menu, "tr", "en", "es", "fr", "de")
-    kaynak_dil_menu_secimi.pack(pady=5)
-
-    # Hedef dil menüsü (aynı önceki kodla)
-    hedef_dil_menu = tk.StringVar(pencere)
-    hedef_dil_menu.set("en")
-    hedef_dil_menu_secimi = tk.OptionMenu(pencere, hedef_dil_menu, "tr", "en", "es", "fr", "de")
-    hedef_dil_menu_secimi.pack(pady=5)
-
-    # Çevir butonu (aynı önceki kodla)
-    cevir_butonu = tk.Button(pencere, text="Çevir", command=cevir)
-    cevir_butonu.pack(pady=10)
-
-    # Çıktı alanı (aynı önceki kodla)
-    cikti_etiketi = tk.Label(pencere, text="Çeviri:")
-    cikti_etiketi.pack(pady=5)
-    cikti_alani = tk.Text(pencere, height=5, width=40)
-    cikti_alani.pack(pady=5)
-
-def google_search(query):
+def messier_go():
     API_KEY = "YOUR_API_KEY"  # YOUR API KEY HERE.  LÜTFEN KENDİ ANAHTARINIZI YAZIN!
-    CSE_ID = "YOUR_CSE_ID"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
+    CSE_ID = "YOUR_CSE_IDE"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
 
     def google_search(search_query):
         service = build("customsearch", "v1", developerKey=API_KEY)
@@ -248,62 +84,75 @@ def google_search(query):
     result_tree.column("snippet", width=400, stretch=tk.YES)
     result_tree.pack(expand=True, fill=tk.BOTH)
     result_tree.bind("<Double-1>", open_link) # Double click ile link açma
+    root.mainloop()
 
-def youtube():
-    global yt_search
-    try:
-        webbrowser.open(f"https://www.youtube.com/results?search_query={yt_search}")
-    except Exception as e:
-        ekle_mesaj(f"Hata: Youtube araması yapılamadı: {e}\n")
+def messierlexicon():
+    """TDK kelime verilerini işleyen bir fonksiyon (Tkinter ile entegre)."""
+    def tdk_kelime_islemleri(dosya_adi):
+
+        try:
+            with open(dosya_adi, 'r', encoding='utf-8') as dosya:
+                oku = csv.DictReader(dosya)
+                veriler = list(oku)
+
+            def yazdir_tum_anlamlar():
+                sonuc = "\n".join([f"'{satir['madde']}': '{satir['anlam']}'" for satir in veriler])
+                sonuc_pencere = tk.Toplevel(root)
+                sonuc_pencere.title("Tüm Anlamlar")
+                sonuc_text = scrolledtext.ScrolledText(sonuc_pencere, wrap=tk.WORD)
+                sonuc_text.insert(tk.END, sonuc)
+                sonuc_text.pack(expand=True, fill="both", padx=10, pady=10)
+                sonuc_text.config(state=tk.DISABLED)
+
+            def bul_anlam():
+                aranan_madde = giris_alanı.get()
+                bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
+                sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
+                sonuc_alani.delete("1.0", tk.END)
+                if bulunan:
+                    sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
+                else:
+                    sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
+                sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
 
 
-def selamla():
-    mesaj_alani.insert(tk.END, "Merhaba! Sana nasıl yardımcı olabilirim?\n")
+            root = tk.Tk()
+            root.title("MessierLexicon")
+            root.geometry("600x400")
+
+            root.grid_rowconfigure(0, weight=1)
+            root.grid_columnconfigure(0, weight=1)
 
 
-def zaman_sor():
-    simdi = datetime.datetime.now()
-    zaman_metni = f"Şu anki zaman: {simdi.strftime('%H:%M:%S')}\n"
-    ekle_mesaj(zaman_metni)
+            tk.Label(root, text="Madde Girin:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
 
-def tarih():
-    simdi = datetime.datetime.now()
-    zaman_metni = f"Şu anki tarih: {simdi.strftime('%d/%m/%Y')}\n"
-    ekle_mesaj(zaman_metni)
+            giris_alanı = tk.Entry(root)
+            giris_alanı.grid(row=1, column=0, sticky="ew", padx=5, pady=5)
 
-def poe_ac():
-    try:
-        webbrowser.open("https://poe.com/Messier_AI")
-        ekle_mesaj("Messier_AI sayfasına yönlendiriliyorsunuz...\n")
-    except webbrowser.Error as e:
-        ekle_mesaj(f"Hata: Poe sayfası açılamadı: {e}\n")
-    except Exception as e:
-        ekle_mesaj(f"Hata: Beklenmedik bir hata oluştu: {e}\n")
+            tk.Button(root, text="Tüm Anlamları Yazdır", command=yazdir_tum_anlamlar).grid(row=2, column=0, sticky="ew", padx=5, pady=5)
+            tk.Button(root, text="Anlam Bul", command=bul_anlam).grid(row=3, column=0, sticky="ew", padx=5, pady=5)
 
 
-def zamanlayici(dakika):
-    try:
-        dakika_sn = int(dakika) * 60
-        if dakika_sn <= 0:
-            ekle_mesaj("Geçersiz süre. Lütfen pozitif bir sayı girin.\n")
-            return
+            sonuc_alani = scrolledtext.ScrolledText(root, wrap=tk.WORD)
+            sonuc_alani.grid(row=4, column=0, sticky="nsew", padx=5, pady=5)
+            sonuc_alani.config(state=tk.DISABLED)
 
-        time.sleep(dakika_sn)
-        if os.path.exists(default_sound_file):
-            try:
-                playsound(default_sound_file)
-            except playsound.PlaysoundException as e:
-                ekle_mesaj(f"Hata: Ses dosyası çalınamadı: {e}\n")
-            except Exception as e:
-                ekle_mesaj(f"Hata: Ses dosyası çalınırken beklenmedik bir hata oluştu: {e}\n")
-        ekle_mesaj(f"{dakika} dakikalık zamanlayıcı tamamlandı!\n")
-    except ValueError:
-        ekle_mesaj("Geçersiz süre. Lütfen bir sayı girin.\n")
-    except Exception as e:
-        ekle_mesaj(f"Hata: Zamanlayıcıda beklenmedik bir hata oluştu: {e}\n")
+
+            root.mainloop()
+
+        except FileNotFoundError:
+            messagebox.showerror("Hata", f"Hata: '{dosya_adi}' dosyası bulunamadı.")
+        except KeyError as e:
+            messagebox.showerror("Hata", f"Hata: '{e}' sütunu dosyada bulunamadı. Lütfen verilerinizin yapısını kontrol edin.")
+        except Exception as e:
+            messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
+
+
+    dosya_adi = r"tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
+    tdk_kelime_islemleri(dosya_adi)
 
 def notlar():
-    
+        
     tab = tk.Tk()
     tab.title("Notlar")
 
@@ -311,98 +160,218 @@ def notlar():
     not_bölümü.pack(expand=True, fill="both")
     tab.minsize(width=175, height=150)
     tab.maxsize(width=250, height=200)
+    tab.mainloop()
 
-def komut_islec(event=None):
-    komut = giris_alani.get().lower()
-    giris_alani.delete(0, tk.END)
+def çeviri():
 
-    try:
-        if komut == "selam":
-            selamla()
-        elif komut == "zaman":
-            zaman_sor()
-        elif komut.startswith("arama"):
-            arama_terimi = komut[6:]
-            results = google_search(arama_terimi)
-        
-        elif komut =="tarih":
-            tarih()
+    def cevir():
+        try:
+            metin = giris_alani.get("1.0", tk.END).strip()
+            kaynak_dil = kaynak_dil_menu.get()
+            hedef_dil = hedef_dil_menu.get()
 
-        elif komut == "yapayzeka" or komut == "messier ai":
-            poe_ac()
-        elif komut.startswith("hesap makinesi"):
-            hesapmakinesi()
-        elif komut.startswith("çeviri"):
-            çeviri()
-        elif komut == "çıkış":
-            pencere.destroy()
-        elif komut== "notlar":
-            notlar()
-        elif komut.startswith("!yt"):
-            global yt_search
-            yt_search = komut[4:]
-            youtube()
+            translator = Translator(to_lang=hedef_dil, from_lang=kaynak_dil)
+            ceviri = translator.translate(metin)
+            cikti_alani.delete("1.0", tk.END)
+            cikti_alani.insert(tk.END, ceviri)
 
-        elif komut == "messier studio":
-            webbrowser.open("https://sites.google.com/view/messier-studio/ana-sayfa")
-
-        elif komut=="sözlük":
-            sozluk()
-        
-        elif komut.startswith("zamanlayıcı"):
-            try:
-                dakika = komut[11:]
-                zamanlayici(dakika)
-            except IndexError:
-                ekle_mesaj("Lütfen zamanlayıcı süresini belirtin (örneğin: zamanlayıcı 5).\n")
-        else:
-            ekle_mesaj("Geçersiz komut.\n")
-    except Exception as e:
-        ekle_mesaj(f"Hata: Komut işlenirken beklenmedik bir hata oluştu: {e}\n")
-
-def ekle_mesaj(mesaj):
-    mesaj_alani.config(state=tk.NORMAL)
-    mesaj_alani.insert(tk.END, mesaj)
-    mesaj_alani.tag_config("link", foreground="blue", underline=1)
-    mesaj_alani.config(state=tk.DISABLED)
-    mesaj_alani.see(tk.END)
+        except Exception as e:
+            cikti_alani.delete("1.0", tk.END)
+            cikti_alani.insert(tk.END, f"Hata: {e}")
 
 
-def open_link(event):
-    try:
-        current_index = float(mesaj_alani.index(tk.CURRENT))
-        soup = BeautifulSoup(mesaj_alani.get("1.0", tk.END), 'html.parser')
-        links = [a['href'] for a in soup.find_all('a', href=True)]
+    # Tkinter penceresi
+    pencere = tk.Tk()
+    pencere.title("Messier Translator")
 
-        if links:
-            webbrowser.open(links[int(current_index // 4)])
+    # Giriş alanı (aynı önceki kodla)
+    giris_etiketi = tk.Label(pencere, text="Çevirilecek Metin:")
+    giris_etiketi.pack(pady=5)
+    giris_alani = tk.Text(pencere, height=5, width=40)
+    giris_alani.pack(pady=5)
 
-    except (IndexError, ValueError, AttributeError, tk.TclError) as e:
-        print(f"Link açılırken bir hata oluştu: {e}")
-    except Exception as e:
-        print(f"Beklenmedik bir hata oluştu: {e}")
+    # Kaynak dil menüsü (aynı önceki kodla)
+    kaynak_dil_menu = tk.StringVar(pencere)
+    kaynak_dil_menu.set("tr")
+    kaynak_dil_menu_secimi = tk.OptionMenu(pencere, kaynak_dil_menu, "tr", "en", "es", "fr", "de")
+    kaynak_dil_menu_secimi.pack(pady=5)
+
+    # Hedef dil menüsü (aynı önceki kodla)
+    hedef_dil_menu = tk.StringVar(pencere)
+    hedef_dil_menu.set("en")
+    hedef_dil_menu_secimi = tk.OptionMenu(pencere, hedef_dil_menu, "tr", "en", "es", "fr", "de")
+    hedef_dil_menu_secimi.pack(pady=5)
+
+    # Çevir butonu (aynı önceki kodla)
+    cevir_butonu = tk.Button(pencere, text="Çevir", command=cevir)
+    cevir_butonu.pack(pady=10)
+
+    # Çıktı alanı (aynı önceki kodla)
+    cikti_etiketi = tk.Label(pencere, text="Çeviri:")
+    cikti_etiketi.pack(pady=5)
+    cikti_alani = tk.Text(pencere, height=5, width=40)
+    cikti_alani.pack(pady=5)
+
+    pencere.mainloop()
+
+def zamanlayıcı(dakika):
+    dakika_sn = int(dakika) * 60
+    time.sleep(dakika_sn)
+    playsound(sesdosyasi)
+    text_box.insert(tk.END, dakika+" dakikalık"+" zamanlayıcı tamamlandı.\n")
+    speak(dakika+" dakikalık"+" zamanlayıcı tamamlandı.")
+
+def hesap_makinesi():
+    def ekle(deger):
+        ekran.insert(tk.END, deger)
+
+    def hesapla():
+        try:
+            if not ekran.get():
+                sonuc_yazisi.config(text="Lütfen bir işlem girin.")
+                return
+
+            sonuc = eval(ekran.get())  # Dikkat: eval güvenlik riski taşıyabilir!  Daha güvenli bir yöntem tercih edilmelidir.
+            ekran.delete(0, tk.END)
+            ekran.insert(0, sonuc)
+            sonuc_yazisi.config(text="")
+
+        except (SyntaxError, NameError, ZeroDivisionError, Exception) as e:
+            sonuc_yazisi.config(text=f"Hata: {e}")
+
+        except Exception as e:
+            sonuc_yazisi.config(text=f"Bir hata oluştu: {e}")
 
 
-pencere = tk.Tk()
-pencere.title("Messier Asistan")
+    # Tkinter penceresi
+    window = tk.Tk()
+    window.title("Tuşlu Hesap Makinesi")
 
-etiket = tk.Label(pencere, text="Komutunuzu girin:")
-etiket.pack(pady=5)
+    # Ekran
+    ekran = tk.Entry(window, width=30, borderwidth=5)
+    ekran.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
 
-giris_alani = tk.Entry(pencere)
-giris_alani.pack(pady=5)
-giris_alani.bind("<Return>", komut_islec)
+    # Sayı tuşları
+    tuslar = [
+        '7', '8', '9', '/',
+        '4', '5', '6', '*',
+        '1', '2', '3', '-',
+        '0', '.', '=', '+'
+    ]
 
-komut_butonu = tk.Button(pencere, text="Gönder", command=komut_islec)
-komut_butonu.pack(pady=5)
+    row = 1
+    col = 0
+    for tus in tuslar:
+        buton = tk.Button(window, text=tus, padx=20, pady=10, command=lambda tus=tus: ekle(tus))
+        buton.grid(row=row, column=col, padx=5, pady=5)
+        col += 1
+        if col > 3:
+            col = 0
+            row += 1
 
-mesaj_alani = tk.Text(pencere, height=10, width=40, wrap=tk.WORD)
-mesaj_alani.pack(pady=5)
-mesaj_alani.config(state=tk.DISABLED)
-mesaj_alani.bind("<Button-1>", open_link)
+    # Temizle butonu
+    temizle_butonu = tk.Button(window, text="C", padx=20, pady=10, command=lambda: ekran.delete(0, tk.END))
+    temizle_butonu.grid(row=row, column=0, columnspan=2, padx=5, pady=5)
 
-mesaj_alani.config(state=tk.NORMAL)
-mesaj_alani.insert(tk.END, uyari_mesaji)
-mesaj_alani.config(state=tk.DISABLED)
+    # Hesapla butonu
+    hesapla_butonu = tk.Button(window, text="=", padx=20, pady=10, command=hesapla)
+    hesapla_butonu.grid(row=row, column=2, columnspan=2, padx=5, pady=5)
 
-pencere.mainloop()
+
+    # Sonuç etiketi
+    sonuc_yazisi = tk.Label(window, text="")
+    sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
+
+    window.mainloop()
+
+def record():
+    with sr.Microphone() as source:
+        audio = r.listen(source)
+        try:
+            return r.recognize_google(audio, language="tr-TR")
+        except sr.UnknownValueError:
+            return "Maalesef bir hata oldu"
+        except sr.RequestError:
+            return "Sistem Hatası"
+
+def response(voice):
+    text_box.insert(tk.END, "Sen: " + voice + "\n")
+    if "nasılsın" in voice:
+        speak("İyiyim peki ya sen?")
+        text_box.insert(tk.END, "Ben: İyiyim peki ya sen?\n")
+    elif "saat kaç" in voice:
+        speak(datetime.now().strftime("%H:%M:%S"))
+        text_box.insert(tk.END, "Ben: " + datetime.now().strftime("%H:%M:%S") + "\n")
+    elif "arama yap" in voice:
+        speak("Arama motoru açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Arama motoru açılıyor..."+"\n")
+        messier_go()
+    elif "Bugün ayın kaçı" in voice:
+        speak(datetime.now().strftime("%d/%m/%Y"))
+        text_box.insert(tk.END, "Ben: " + datetime.now().strftime("%d/%m/%Y") + "\n")
+    elif "sözlük" in voice:
+        speak("Sözlük açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Sözlük açılıyor..."+"\n")
+        messierlexicon()
+    elif "notlar" in voice:
+        speak("Notlar açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Notlar açılıyor..."+"\n")
+        notlar()
+    elif "çeviri" in voice:
+        speak("Çeviri açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Çeviri açılıyor..."+"\n")
+        çeviri()
+    elif "hesap makinesi" in voice:
+        speak("Hesap Makinesi açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Hesap Makinesi açılıyor..."+"\n")
+        hesap_makinesi()
+    elif "Yapay Zeka" in voice:
+        speak("Yapayzeka açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Yapayzeka açılıyor..."+"\n")
+        webbrowser.open("https://poe.com/Messier_AI")
+    elif "yt" in voice:
+        speak("Yt açılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Youtube açılıyor..."+"\n")
+        webbrowser.open("https://www.youtube.com/")
+    elif "zamanlayıcı" in voice:
+        speak("Zamanlayıcı kuruluyor")
+        text_box.insert(tk.END, "Ben: " + "Zamanlayıcı kuruluyor"+"\n")
+        dakika = voice[11:]
+        zamanlayıcı(dakika)
+    elif "görüşürüz" in voice:
+        speak("Görüşürüz!")
+        text_box.insert(tk.END, "Ben: Görüşürüz!\n")
+        root.destroy()
+    else:
+        text_box.insert(tk.END, "Ben: Anlamadım.\n")
+
+def speak(string):
+    tts = gTTS(string, lang="tr")
+    rand = random.randint(1, 10000)
+    file = "audio-" + str(rand) + ".mp3"
+    tts.save(file)
+    playsound(file)
+    os.remove(file)
+
+def listen_loop():
+    while True:
+        voice = record()
+        if voice:
+            response(voice)
+        time.sleep(1)
+
+root = tk.Tk()
+root.title("Sesli Messier Asistan")
+
+text_box = scrolledtext.ScrolledText(root, wrap=tk.WORD, height=20, width=50)
+text_box.pack()
+
+speak("Nasıl Yardımcı Olabilirim?")
+text_box.insert(tk.END, "Ben: Nasıl Yardımcı Olabilirim?\n")
+
+
+listen_thread = threading.Thread(target=listen_loop)
+listen_thread.daemon = True 
+listen_thread.start()
+
+root.mainloop()
