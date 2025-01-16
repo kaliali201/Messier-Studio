@@ -16,14 +16,16 @@ from functools import partial
 from tkinter import messagebox, scrolledtext
 import csv
 from translate import Translator
+import tkinter.filedialog as fd
+import tkinter.messagebox as mb
 
 sesdosyasi= r"Galaxy-Note-4-Melody.mp3"
 
 r = sr.Recognizer()
 
 def messier_go():
-    API_KEY = "YOUR_API_KEY"  # YOUR API KEY HERE.  LÜTFEN KENDİ ANAHTARINIZI YAZIN!
-    CSE_ID = "YOUR_CSE_IDE"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
+    API_KEY = "AIzaSyBHYdxofhKlyAdW2npxgiNgQIPM57pCHzI"  # YOUR API KEY HERE.  LÜTFEN KENDİ ANAHTARINIZI YAZIN!
+    CSE_ID = "835a1505c207a490c"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
 
     def google_search(search_query):
         service = build("customsearch", "v1", developerKey=API_KEY)
@@ -152,7 +154,6 @@ def messierlexicon():
     tdk_kelime_islemleri(dosya_adi)
 
 def notlar():
-        
     tab = tk.Tk()
     tab.title("Notlar")
 
@@ -218,7 +219,7 @@ def zamanlayıcı(dakika):
     dakika_sn = int(dakika) * 60
     time.sleep(dakika_sn)
     playsound(sesdosyasi)
-    text_box.insert(tk.END, dakika+" dakikalık"+" zamanlayıcı tamamlandı.\n")
+    text_box.insert(tk.END, "Ben:" + dakika +" dakikalık"+" zamanlayıcı tamamlandı.\n")
     speak(dakika+" dakikalık"+" zamanlayıcı tamamlandı.")
 
 def hesap_makinesi():
@@ -284,6 +285,104 @@ def hesap_makinesi():
 
     window.mainloop()
 
+def motivasyon():
+    motivasyon_sozleri = [
+    "Başarı, başarısızlıktan sonraki bir denemedir.",
+    "Hayallerinizin peşinden koşun, korkmayın.",
+    "Bugün yapabileceğiniz küçük bir adım, yarın büyük bir başarıya dönüşebilir.",
+    "Her gün yeni bir başlangıçtır.",
+    "Kendinize inanın, başarabilirsiniz.",
+    "Sınırlarınızı zorlayın, potansiyelinizi keşfedin.",
+    "Olumsuz düşünceleri olumlu düşüncelerle değiştirin.",
+    "Başarının sırrı, azim ve kararlılıktır.",
+    "Zorluklar, sizi daha güçlü kılar.",
+    "Her başarısızlık, yeni bir öğrenme fırsatıdır.",
+    "Pes etmeyin, devam edin!",
+    "İmkansız diye bir şey yoktur.",
+    "Kendinize güvenin, yeteneklerinizin farkına varın.",
+    "Hedeflerinizi belirleyin ve onlara doğru ilerleyin.",
+    "Her gün kendinizi geliştirin.",
+    "Başkalarına ilham verin, onlara destek olun.",
+    "Pozitif olun, pozitif enerji yayının.",
+    "Hayatınızın kontrolünü elinize alın.",
+    "Korkularınızın üstesinden gelin.",
+    "Yeteneklerinizin farkına varın ve onları geliştirin.",
+    "Başarıya giden yol, çalışmak ve azim göstermektir.",
+    "Sabırlı olun, sonuçlar zamanla ortaya çıkar.",
+    "Kendinizi eleştirin, ancak kendinizi yıkmayın.",
+    "Başarıya giden yol, sürekli öğrenmektir.",
+    "Düştüğünüzde kalkın ve tekrar deneyin.",
+    "Hayatınızın sorumluluğunu alın.",
+    "Başkalarının görüşlerine takılmayın.",
+    "Kendinize olan inancınızı asla kaybetmeyin.",
+    "Hayatınızda olumlu değişiklikler yapın.",
+    "Her gün yeni bir şey öğrenin.",
+    "Başarıya ulaşmak için sürekli çaba gösterin.",
+    "Hedeflerinize ulaşmak için planlı ve düzenli çalışın.",
+    "Kendinizi motive edin ve motive kalın.",
+    "Başkalarına yardım edin, onlara destek olun.",
+    "Hayatınızda dengeyi sağlayın.",
+    "Stresle başa çıkma yolları öğrenin.",
+    "Sağlığınıza dikkat edin.",
+    "Olumlu ilişkiler kurun.",
+    "Kendinize zaman ayırın.",
+    "Hobilerinizin tadını çıkarın.",
+    "Doğayla vakit geçirin.",
+    "Seyahat edin, yeni yerler keşfedin.",
+    "Yeni şeyler öğrenin, kendinizi geliştirin.",
+    "Hayatın tadını çıkarın!",
+    "Her şeyin bir zamanı vardır.",
+    "Sabır, başarıya giden yolda önemli bir faktördür.",
+    "Azim, başarının anahtarıdır.",
+    "Kararlılık, hedefinize ulaşmanıza yardımcı olur.",
+    "İnanç, başarıya giden yolda size güç verir.",
+    "Umut, sizi motive eder ve ilerlemenizi sağlar.",
+    "Sevgi, hayatınıza pozitif enerji katar.",
+    "Neşe, hayatınızı daha anlamlı kılar.",
+    "Barış, iç huzurunuzu sağlar.",
+    "Minnettarlık, hayatınızdaki güzellikleri görmenizi sağlar.",
+    "Affetmek, sizi özgürleştirir.",
+    "Bağışlamak, ruhunuz için iyidir.",
+    "Yardımlaşmak, insanlığın güzelliğidir.",
+    "Empati, başkalarını anlamanıza yardımcı olur.",
+    "Merhamet, insan olmanın en güzel özelliklerinden biridir.",
+    "Adalet, toplumun temel taşlarından biridir.",
+    "Doğruluk, güvenilirliğin temelidir.",
+    "Sadakat, güçlü ilişkilerin temelidir.",
+    "Cömertlik, insanları mutlu eder.",
+    "Saygı, karşılıklı anlayışın temelidir.",
+    "Hoşgörü, farklılıkları kabul etmeyi sağlar.",
+    "Tolerans, barışçıl bir yaşam için gereklidir.",
+    "Anlayış, iletişimin temelidir.",
+    "Kabul, kendinizi ve başkalarını sevmenizi sağlar.",
+    "Özgüven, başarıya giden yolda önemli bir faktördür.",
+    "Kendine inanmak, her şeyin başlangıcıdır.",
+    "Hayat kısa, yaşamaya değer.",
+    "Her anın tadını çıkarın.",
+    "Mutlu olun, hayatı dolu dolu yaşayın!",
+    "Kendinize iyi bakın.",
+    "Sağlıklı kalın, mutlu kalın!",
+    "Hayallerinizin peşinden koşmaya devam edin!",
+    "Başarıya ulaşana kadar pes etmeyin!",
+    "Kendinize inanın, başarabilirsiniz!",
+    "Her şey mümkün, yeter ki isteyin!",
+    "Hayat bir macera, keşfedin!",
+    "Öğrenmeye devam edin, gelişmeye devam edin!",
+    "Kendinizi sürekli geliştirin!",
+    "Hayatınızı dolu dolu yaşayın!",
+    "Her gün yeni bir fırsattır!",
+    "Mutlu bir hayat için çalışın!",
+    "Başarıya ulaşmak için azim gösterin!",
+    "Kendinize olan inancınızı asla kaybetmeyin!"
+    ]
+
+    birsöz= random.choice(motivasyon_sozleri)
+    speak(birsöz)
+    text_box.insert(tk.END, "Ben: " + birsöz +"\n")
+
+
+
+
 def record():
     with sr.Microphone() as source:
         audio = r.listen(source)
@@ -328,7 +427,7 @@ def response(voice):
     elif "Yapay Zeka" in voice:
         speak("Yapayzeka açılıyor...")
         text_box.insert(tk.END, "Ben: " + "Yapayzeka açılıyor..."+"\n")
-        webbrowser.open("https://poe.com/Messier_AI")
+        webbrowser.open("https://landbot.online/v3/H-2748555-9LHQLKEBQVMYVK26/index.html")
     elif "yt" in voice:
         speak("Yt açılıyor...")
         text_box.insert(tk.END, "Ben: " + "Youtube açılıyor..."+"\n")
@@ -338,6 +437,8 @@ def response(voice):
         text_box.insert(tk.END, "Ben: " + "Zamanlayıcı kuruluyor"+"\n")
         dakika = voice[11:]
         zamanlayıcı(dakika)
+    elif "beni motive et" in voice:
+        motivasyon()
     elif "görüşürüz" in voice:
         speak("Görüşürüz!")
         text_box.insert(tk.END, "Ben: Görüşürüz!\n")
