@@ -1,49 +1,58 @@
 import tkinter as tk
-from translate import Translator
+from googletrans import Translator
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
 
 def cevir():
+    asyncio.run(cevir_asenkron())
+
+async def cevir_asenkron():
     try:
         metin = giris_alani.get("1.0", tk.END).strip()
         kaynak_dil = kaynak_dil_menu.get()
         hedef_dil = hedef_dil_menu.get()
 
-        translator = Translator(to_lang=hedef_dil, from_lang=kaynak_dil)
-        ceviri = translator.translate(metin)
-        cikti_alani.delete("1.0", tk.END)
-        cikti_alani.insert(tk.END, ceviri)
+        translator = Translator()
+        ceviri = await translator.translate(metin, src=kaynak_dil, dest=hedef_dil)
+
+        pencere.after(0, lambda: guncelle_cikti(ceviri.text))
 
     except Exception as e:
-        cikti_alani.delete("1.0", tk.END)
-        cikti_alani.insert(tk.END, f"Hata: {e}")
+        pencere.after(0, lambda: guncelle_cikti(f"Hata: {e}"))
+
+def guncelle_cikti(text):
+    cikti_alani.delete("1.0", tk.END)
+    cikti_alani.insert(tk.END, text)
 
 
-# Tkinter penceresi
 pencere = tk.Tk()
 pencere.title("Messier Translator")
 
-# Giriş alanı (aynı önceki kodla)
+
 giris_etiketi = tk.Label(pencere, text="Çevirilecek Metin:")
 giris_etiketi.pack(pady=5)
 giris_alani = tk.Text(pencere, height=5, width=40)
 giris_alani.pack(pady=5)
 
-# Kaynak dil menüsü (aynı önceki kodla)
+
 kaynak_dil_menu = tk.StringVar(pencere)
 kaynak_dil_menu.set("tr")
 kaynak_dil_menu_secimi = tk.OptionMenu(pencere, kaynak_dil_menu, "tr", "en", "es", "fr", "de")
 kaynak_dil_menu_secimi.pack(pady=5)
 
-# Hedef dil menüsü (aynı önceki kodla)
+
 hedef_dil_menu = tk.StringVar(pencere)
 hedef_dil_menu.set("en")
 hedef_dil_menu_secimi = tk.OptionMenu(pencere, hedef_dil_menu, "tr", "en", "es", "fr", "de")
 hedef_dil_menu_secimi.pack(pady=5)
 
-# Çevir butonu (aynı önceki kodla)
+
 cevir_butonu = tk.Button(pencere, text="Çevir", command=cevir)
 cevir_butonu.pack(pady=10)
 
-# Çıktı alanı (aynı önceki kodla)
+
 cikti_etiketi = tk.Label(pencere, text="Çeviri:")
 cikti_etiketi.pack(pady=5)
 cikti_alani = tk.Text(pencere, height=5, width=40)
