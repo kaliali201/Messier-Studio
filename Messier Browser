@@ -86,7 +86,7 @@ class TabWidget(QTabWidget):
 
 class MainWindow(QMainWindow):
     def messier_AI(self):
-        webbrowser.open("https://poe.com/Messier_AI")
+        webbrowser.open("https://sites.google.com/view/messier-studio/messier_ai")
 
 
 
