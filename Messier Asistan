@@ -15,17 +15,21 @@ from tkinter import messagebox
 from functools import partial
 from tkinter import messagebox, scrolledtext
 import csv
-from translate import Translator
 import tkinter.filedialog as fd
 import tkinter.messagebox as mb
+import requests
+from googletrans import Translator
+import asyncio
+import nest_asyncio
+
 
 sesdosyasi= r"Galaxy-Note-4-Melody.mp3"
 
 r = sr.Recognizer()
 
 def messier_go():
-    API_KEY = "AIzaSyBHYdxofhKlyAdW2npxgiNgQIPM57pCHzI"  # YOUR API KEY HERE.  LÜTFEN KENDİ ANAHTARINIZI YAZIN!
-    CSE_ID = "835a1505c207a490c"    # YOUR CSE ID HERE. LÜTFEN KENDİ KİMLİĞİNİZİ YAZIN!
+    API_KEY = "YOUR_API_KEY"
+    CSE_ID = "YOUR_CSE_ID"
 
     def google_search(search_query):
         service = build("customsearch", "v1", developerKey=API_KEY)
@@ -38,7 +42,7 @@ def messier_go():
 
     def display_results(results):
         for child in result_tree.get_children():
-            result_tree.delete(child) # önceki sonuçları temizle
+            result_tree.delete(child)
 
         if results:
             for result in results:
@@ -78,14 +82,13 @@ def messier_go():
     search_button = tk.Button(root, text="Ara", command=search_button_clicked)
     search_button.pack(pady=5)
 
-    # Treeview kullanarak kaydırma
     result_tree = ttk.Treeview(root, columns=("link", "snippet"), show="headings")
     result_tree.heading("link", text="Link")
     result_tree.heading("snippet", text="Özet")
     result_tree.column("link", width=200, stretch=tk.NO)
     result_tree.column("snippet", width=400, stretch=tk.YES)
     result_tree.pack(expand=True, fill=tk.BOTH)
-    result_tree.bind("<Double-1>", open_link) # Double click ile link açma
+    result_tree.bind("<Double-1>", open_link)
     root.mainloop()
 
 def messierlexicon():
@@ -109,13 +112,13 @@ def messierlexicon():
             def bul_anlam():
                 aranan_madde = giris_alanı.get()
                 bulunan = next((satir for satir in veriler if satir['madde'] == aranan_madde), None)
-                sonuc_alani.config(state=tk.NORMAL) # Yazma moduna alınır
+                sonuc_alani.config(state=tk.NORMAL)
                 sonuc_alani.delete("1.0", tk.END)
                 if bulunan:
                     sonuc_alani.insert(tk.END, f"'{bulunan['madde']}': '{bulunan['anlam']}'")
                 else:
                     sonuc_alani.insert(tk.END, f"'{aranan_madde}' maddesi bulunamadı.")
-                sonuc_alani.config(state=tk.DISABLED) # Tekrar okuma moduna alınır
+                sonuc_alani.config(state=tk.DISABLED)
 
 
             root = tk.Tk()
@@ -150,7 +153,7 @@ def messierlexicon():
             messagebox.showerror("Hata", f"Beklenmedik bir hata oluştu: {e}")
 
 
-    dosya_adi = r"tdk_word_meaning_data.csv"  # Dosya adını doğrulayın
+    dosya_adi = r"tdk_word_meaning_data.csv"
     tdk_kelime_islemleri(dosya_adi)
 
 def notlar():
@@ -164,50 +167,50 @@ def notlar():
     tab.mainloop()
 
 def çeviri():
+    nest_asyncio.apply()
 
     def cevir():
+        asyncio.run(cevir_asenkron())
+
+    async def cevir_asenkron():
         try:
             metin = giris_alani.get("1.0", tk.END).strip()
             kaynak_dil = kaynak_dil_menu.get()
             hedef_dil = hedef_dil_menu.get()
 
-            translator = Translator(to_lang=hedef_dil, from_lang=kaynak_dil)
-            ceviri = translator.translate(metin)
-            cikti_alani.delete("1.0", tk.END)
-            cikti_alani.insert(tk.END, ceviri)
+            translator = Translator()
+            ceviri = await translator.translate(metin, src=kaynak_dil, dest=hedef_dil)
+
+            pencere.after(0, lambda: guncelle_cikti(ceviri.text))
 
         except Exception as e:
-            cikti_alani.delete("1.0", tk.END)
-            cikti_alani.insert(tk.END, f"Hata: {e}")
+            pencere.after(0, lambda: guncelle_cikti(f"Hata: {e}"))
 
+    def guncelle_cikti(text):
+        cikti_alani.delete("1.0", tk.END)
+        cikti_alani.insert(tk.END, text)
 
-    # Tkinter penceresi
     pencere = tk.Tk()
     pencere.title("Messier Translator")
 
-    # Giriş alanı (aynı önceki kodla)
     giris_etiketi = tk.Label(pencere, text="Çevirilecek Metin:")
     giris_etiketi.pack(pady=5)
     giris_alani = tk.Text(pencere, height=5, width=40)
     giris_alani.pack(pady=5)
 
-    # Kaynak dil menüsü (aynı önceki kodla)
     kaynak_dil_menu = tk.StringVar(pencere)
     kaynak_dil_menu.set("tr")
     kaynak_dil_menu_secimi = tk.OptionMenu(pencere, kaynak_dil_menu, "tr", "en", "es", "fr", "de")
     kaynak_dil_menu_secimi.pack(pady=5)
 
-    # Hedef dil menüsü (aynı önceki kodla)
     hedef_dil_menu = tk.StringVar(pencere)
     hedef_dil_menu.set("en")
     hedef_dil_menu_secimi = tk.OptionMenu(pencere, hedef_dil_menu, "tr", "en", "es", "fr", "de")
     hedef_dil_menu_secimi.pack(pady=5)
 
-    # Çevir butonu (aynı önceki kodla)
     cevir_butonu = tk.Button(pencere, text="Çevir", command=cevir)
     cevir_butonu.pack(pady=10)
 
-    # Çıktı alanı (aynı önceki kodla)
     cikti_etiketi = tk.Label(pencere, text="Çeviri:")
     cikti_etiketi.pack(pady=5)
     cikti_alani = tk.Text(pencere, height=5, width=40)
@@ -232,7 +235,7 @@ def hesap_makinesi():
                 sonuc_yazisi.config(text="Lütfen bir işlem girin.")
                 return
 
-            sonuc = eval(ekran.get())  # Dikkat: eval güvenlik riski taşıyabilir!  Daha güvenli bir yöntem tercih edilmelidir.
+            sonuc = eval(ekran.get())
             ekran.delete(0, tk.END)
             ekran.insert(0, sonuc)
             sonuc_yazisi.config(text="")
@@ -244,15 +247,12 @@ def hesap_makinesi():
             sonuc_yazisi.config(text=f"Bir hata oluştu: {e}")
 
 
-    # Tkinter penceresi
     window = tk.Tk()
     window.title("Tuşlu Hesap Makinesi")
 
-    # Ekran
     ekran = tk.Entry(window, width=30, borderwidth=5)
     ekran.grid(row=0, column=0, columnspan=4, padx=10, pady=10)
 
-    # Sayı tuşları
     tuslar = [
         '7', '8', '9', '/',
         '4', '5', '6', '*',
@@ -270,20 +270,19 @@ def hesap_makinesi():
             col = 0
             row += 1
 
-    # Temizle butonu
     temizle_butonu = tk.Button(window, text="C", padx=20, pady=10, command=lambda: ekran.delete(0, tk.END))
     temizle_butonu.grid(row=row, column=0, columnspan=2, padx=5, pady=5)
 
-    # Hesapla butonu
     hesapla_butonu = tk.Button(window, text="=", padx=20, pady=10, command=hesapla)
     hesapla_butonu.grid(row=row, column=2, columnspan=2, padx=5, pady=5)
 
 
-    # Sonuç etiketi
     sonuc_yazisi = tk.Label(window, text="")
     sonuc_yazisi.grid(row=row+1, column=0, columnspan=4, pady=5)
 
     window.mainloop()
+
+
 
 def motivasyon():
     motivasyon_sozleri = [
@@ -427,11 +426,12 @@ def response(voice):
     elif "Yapay Zeka" in voice:
         speak("Yapayzeka açılıyor...")
         text_box.insert(tk.END, "Ben: " + "Yapayzeka açılıyor..."+"\n")
-        webbrowser.open("https://landbot.online/v3/H-2748555-9LHQLKEBQVMYVK26/index.html")
+        webbrowser.open("https://sites.google.com/view/messier-studio/messier_ai")
     elif "yt" in voice:
-        speak("Yt açılıyor...")
-        text_box.insert(tk.END, "Ben: " + "Youtube açılıyor..."+"\n")
-        webbrowser.open("https://www.youtube.com/")
+        ytarama = voice[3:]
+        speak("Yt araması yapılıyor...")
+        text_box.insert(tk.END, "Ben: " + "Youtube araması yapılıyor..."+"\n")
+        webbrowser.open("https://www.youtube.com/results?search_query="+ytarama)
     elif "zamanlayıcı" in voice:
         speak("Zamanlayıcı kuruluyor")
         text_box.insert(tk.END, "Ben: " + "Zamanlayıcı kuruluyor"+"\n")
@@ -439,6 +439,62 @@ def response(voice):
         zamanlayıcı(dakika)
     elif "beni motive et" in voice:
         motivasyon()
+    elif "Bugün hava nasıl" in voice:
+        api_key = "YOUR_API_KEY"
+
+        if api_key is None:
+            raise ValueError("WEATHERAPI_KEY ortam değişkeni ayarlanmadı. Lütfen WeatherAPI'den bir API anahtarı alın ve ortam değişkeni olarak ayarlayın.")
+
+
+        def get_weather(city, country_code):
+            """WeatherAPI'den hava durumu verilerini alır."""
+            base_url = "http://api.weatherapi.com/v1"
+            endpoint = "/current.json"
+            url = f"{base_url}{endpoint}?key={api_key}&q={city},{country_code}"
+
+            try:
+                response = requests.get(url)
+                response.raise_for_status()
+                data = response.json()
+                return data
+            except requests.exceptions.RequestException as e:
+                print(f"Hata: {e}")
+                return None
+
+        if __name__ == "__main__":
+            speak("Hangi şehirdeki hava durumunu öğrenmek istersiniz?")
+            text_box.insert(tk.END, "Ben: " + "Hangi şehirdeki hava durumunu öğrenmek istersiniz?"+"\n")
+            city = record()
+            text_box.insert(tk.END, "Sen:" + city + "\n")
+
+            speak("Hangi ülkenin hava durumunu öğrenmek istersiniz? (örneğin, TR, US)")
+            text_box.insert(tk.END, "Ben: " + "Hangi ülkenin hava durumunu öğrenmek istersiniz? (örneğin, TR, US)"+"\n")
+            country_code = record().upper()
+            text_box.insert(tk.END, "Sen:" + country_code + "\n")
+
+            weather_data = get_weather(city, country_code)
+
+            if weather_data:
+                try:
+                    temperature = weather_data["current"]["temp_c"]
+                    condition = weather_data["current"]["condition"]["text"]
+                    wind_speed = weather_data["current"]["wind_kph"]
+                    humidity = weather_data["current"]["humidity"]
+
+                    text_box.insert(tk.END, "Ben:" + f" Şehir: {city}, {country_code}"+ "\n")
+                    text_box.insert(tk.END, "Ben:" + f" Sıcaklık: {temperature} °C"+"\n")
+                    text_box.insert(tk.END, "Ben:" + f" Hava Durumu: {condition}"+"\n")
+                    text_box.insert(tk.END, "Ben:" + f" Rüzgar Hızı: {wind_speed} km/h"+"\n")
+                    text_box.insert(tk.END, "Ben:" + f" Nem: {humidity}%"+"\n")
+                    speak(f"Şehir: {city}, {country_code}")
+                    speak(f"Sıcaklık: {temperature} °C")
+                    speak(f"Hava Durumu: {condition}")
+                    speak(f"Rüzgar Hızı: {wind_speed} km/h")
+                    speak(f"Nem: {humidity}%")
+                except KeyError as e:
+                    speak(f"Beklenmedik veri yapısı: {e}")
+            else:
+                speak("Hava durumu verileri alınamadı.")
     elif "görüşürüz" in voice:
         speak("Görüşürüz!")
         text_box.insert(tk.END, "Ben: Görüşürüz!\n")
