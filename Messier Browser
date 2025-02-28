@@ -5,9 +5,14 @@ from PyQt5.QtCore import QUrl, Qt
 from googleapiclient.discovery import build
 from PyQt5.QtGui import QIcon
 import webbrowser
+from PyQt5.QtWidgets import (QApplication, QWidget, QTextEdit,
+                                    QPushButton, QVBoxLayout, QHBoxLayout,
+                                    QLabel)
+import google.generativeai as genai
+import os
 
 
-# API anahtarınızı ve CSE ID'nizi BU KISMA DEĞİL, güvenli bir yere koyun!
+
 api_key = "YOUR_API_KEY"
 search_engine_id = "YOUR_CSE_ID"
 
@@ -86,7 +91,81 @@ class TabWidget(QTabWidget):
 
 class MainWindow(QMainWindow):
     def messier_AI(self):
-        webbrowser.open("https://sites.google.com/view/messier-studio/messier_ai")
+        
+        API_KEY = "YOUR_API_KEY"
+        genai.configure(api_key=API_KEY)
+
+        # Model oluşturma
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 40,
+            "max_output_tokens": 8192,
+            "response_mime_type": "text/plain",
+        }
+
+        model = genai.GenerativeModel(
+            model_name="tunedModels/messierai-q377f8mqnhnl",
+            generation_config=generation_config,
+        )
+
+        chat_session = model.start_chat(history=[])
+
+
+        class ChatWindow(QDialog):
+            def __init__(self):
+                super().__init__()
+
+                self.setWindowTitle("Messier AI Chat")
+
+                # Arayüz elemanları
+                self.chat_history = QTextEdit()
+                self.user_input = QTextEdit(
+                    placeholderText="Nasıl yardımcı olabilirim?",
+                    maximumHeight=50  # Kullanıcı girdisi için yüksekliği sınırlayın
+                )
+                self.send_button = QPushButton("Gönder")
+                self.clear_button = QPushButton("Temizle") # Geçmişi temizleme butonu eklendi
+
+                # Butonlara tıklama olayları
+                self.send_button.clicked.connect(self.send_message)
+                self.clear_button.clicked.connect(self.clear_history) # Temizleme fonksiyonuna bağlandı
+
+                # Layout
+                v_layout = QVBoxLayout()
+
+                input_layout = QHBoxLayout() # Kullanıcı girdisi ve gönder butonu için yatay layout
+                input_layout.addWidget(self.user_input)
+                input_layout.addWidget(self.send_button)
+
+                v_layout.addWidget(self.chat_history)
+                v_layout.addLayout(input_layout) # Yatay layout'u ana layout'a ekle
+                v_layout.addWidget(self.clear_button) # Temizleme butonunu ekle
+
+
+                self.setLayout(v_layout)
+
+            def send_message(self):
+                user_message = self.user_input.toPlainText()
+                self.chat_history.append("Siz: " + user_message)  # Kullanıcı mesajını göster
+                self.user_input.clear()  # Girdi alanını temizle
+
+                try:
+                    response = chat_session.send_message(user_message)
+                    self.chat_history.append("Messier AI: " + response.text)  # Yanıtı göster
+                except Exception as e:
+                    self.chat_history.append(f"Hata: {e}")
+                    import traceback
+                    traceback.print_exc()
+
+            def clear_history(self):
+                self.chat_history.clear() # Sohbet geçmişini temizle
+
+
+        if __name__ == "__main__":
+            window = ChatWindow()
+            window.exec_()
+            
 
 
 
