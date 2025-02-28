@@ -21,6 +21,7 @@ import requests
 from googletrans import Translator
 import asyncio
 import nest_asyncio
+import google.generativeai as genai
 
 
 sesdosyasi= r"Galaxy-Note-4-Melody.mp3"
@@ -379,7 +380,68 @@ def motivasyon():
     speak(birsöz)
     text_box.insert(tk.END, "Ben: " + birsöz +"\n")
 
+def messier_ai():
 
+    genai.configure(api_key="YOUR_API_KEY")
+
+
+    generation_config = {
+        "temperature": 1,
+        "top_p": 0.95,
+        "top_k": 40,
+        "max_output_tokens": 8192,
+        "response_mime_type": "text/plain",
+    }
+
+    model = genai.GenerativeModel(
+        model_name="tunedModels/messierai-q377f8mqnhnl",
+        generation_config=generation_config,
+    )
+
+    chat_session = model.start_chat(history=[])
+
+    def send_message():
+        user_message = user_input.get("1.0", tk.END).strip()
+        chat_history.config(state=tk.NORMAL)
+        chat_history.insert(tk.END, "Siz: " + user_message + "\n")
+        chat_history.config(state=tk.DISABLED)
+        user_input.delete("1.0", tk.END)
+
+        try:
+            response = chat_session.send_message(user_message)
+            chat_history.config(state=tk.NORMAL)
+            chat_history.insert(tk.END, "Messier_AI: " + response.text + "\n")
+            chat_history.config(state=tk.DISABLED)
+
+        except Exception as e:
+            chat_history.config(state=tk.NORMAL)
+            chat_history.insert(tk.END, f"Hata: {e}\n")
+            chat_history.config(state=tk.DISABLED)
+            import traceback
+            traceback.print_exc()
+
+    def clear_history():
+        chat_history.config(state=tk.NORMAL)
+        chat_history.delete("1.0", tk.END)
+        chat_history.config(state=tk.DISABLED)
+
+
+    win = tk.Tk()
+    win.title("Messier_AI")
+
+    chat_history = scrolledtext.ScrolledText(win, wrap=tk.WORD, state=tk.DISABLED) 
+    chat_history.pack(fill=tk.BOTH, expand=True)
+
+    user_input = tk.Text(win, height=5)
+    user_input.pack(fill=tk.X)
+
+    send_button = tk.Button(win, text="Gönder", command=send_message)
+    send_button.pack()
+
+    clear_button = tk.Button(win, text="Temizle", command=clear_history)
+    clear_button.pack()
+
+    win.mainloop()
 
 
 def record():
@@ -426,7 +488,7 @@ def response(voice):
     elif "Yapay Zeka" in voice:
         speak("Yapayzeka açılıyor...")
         text_box.insert(tk.END, "Ben: " + "Yapayzeka açılıyor..."+"\n")
-        webbrowser.open("https://sites.google.com/view/messier-studio/messier_ai")
+        messier_ai()
     elif "yt" in voice:
         ytarama = voice[3:]
         speak("Yt araması yapılıyor...")
